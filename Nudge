@@ -1,0 +1,221 @@
+#!/usr/bin/python3
+import RPi.GPIO as GPIO
+import time
+import serial #data from arduino
+import telepot #NudgeBot
+
+#ls /dev/tty*                       //copy this into your terminal to see ports
+
+# GPIO pin numbers for each sensor
+MOVEMENT_SENSOR_PIN = 16
+PARTNER_PIN = 17                    
+
+# GPIO pin numbers for LEDs
+LED_GREEN = 5
+LED_YELLOW = 19
+LED_ORANGE = 26
+LED_RED = 20
+
+# GPIO pin number for the relay
+RELAY_PIN = 21
+
+# Initialize GPIO settings
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(MOVEMENT_SENSOR_PIN, GPIO.IN)
+GPIO.setup(PARTNER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(LED_GREEN, GPIO.OUT)
+GPIO.setup(LED_YELLOW, GPIO.OUT)
+GPIO.setup(LED_ORANGE, GPIO.OUT)
+GPIO.setup(LED_RED, GPIO.OUT)
+GPIO.setup(RELAY_PIN, GPIO.OUT)
+
+# NudgeBot Information
+telegram_bot = telepot.Bot(token="6140379183:AAEoN8-uqOLogaIIPt7RasbdlOWypCa-nmo")
+
+# method for text message
+def send_text_message(chat_id, message):
+    telegram_bot.sendMessage(chat_id=chat_id, text=message)
+
+# method for button to increment counter by +2, guaranteeing relay activation
+def button_pressed(channel):
+    global button_counter
+    button_counter += 2 
+
+# method to control LED sensors based on the count
+def control_leds(count):
+    if count == 0:
+        GPIO.output(LED_GREEN, GPIO.HIGH)
+        GPIO.output(LED_YELLOW, GPIO.LOW)
+        GPIO.output(LED_ORANGE, GPIO.LOW)
+        GPIO.output(LED_RED, GPIO.LOW)
+    elif count == 1:
+        GPIO.output(LED_GREEN, GPIO.LOW)
+        GPIO.output(LED_YELLOW, GPIO.HIGH)
+        GPIO.output(LED_ORANGE, GPIO.LOW)
+        GPIO.output(LED_RED, GPIO.LOW)
+    elif count == 2:
+        GPIO.output(LED_GREEN, GPIO.LOW)
+        GPIO.output(LED_YELLOW, GPIO.LOW)
+        GPIO.output(LED_ORANGE, GPIO.HIGH)
+        GPIO.output(LED_RED, GPIO.LOW)
+    else:
+        GPIO.output(LED_GREEN, GPIO.LOW)
+        GPIO.output(LED_YELLOW, GPIO.LOW)
+        GPIO.output(LED_ORANGE, GPIO.LOW)
+        GPIO.output(LED_RED, GPIO.HIGH)
+
+GPIO.setup(PARTNER_PIN,GPIO.IN,pull_up_down=GPIO.PUD_UP)
+
+# Parameters for noise, movement, and temperature
+# Max values allowed without adjusting the count
+noise_limit = 375 # Adjust this value as per your requirement
+movement_limit = 1  # Adjust this value as per your requirement
+temperature_upper_limit = 32  # Adjust this value as per your requirement
+temperature_upper_safe = 27  # Adjust this value as per your requirement
+temperature_lower_safe = 21  # Adjust this value as per your requirement
+temperature_lower_limit = 18  # Adjust this value as per your requirement
+
+# Initialize the counters
+noise_counter = 0
+movement_counter = 0
+temperature_counter = 0
+button_counter = 0
+counter = 0
+highest_counter = 0
+highest_message = ""
+
+# Example usage
+chat_id = "6096890625"  # Replace with your chat ID
+message1 = "Partner Request"
+message2 = "Check baby/partner (2)" # Message can say whatever you want it to say
+message3 = "Check baby/partner (3)" # Message can say whatever you want it to say
+message4 = "Check baby/partner (4+)" # Message can say whatever you want it to say
+
+# Configure the serial connection
+serial_ports = ['/dev/ttyACM0', '/dev/ttyACM1']
+
+for port in serial_ports:
+    try:
+        ser = serial.Serial(port, 9600)  # Try connecting to the serial port
+        break  # If successful, exit the loop
+    except serial.SerialException:
+        print(f"Failed to connect to {port}")
+else:
+    print("Failed to connect to any serial port. Exiting...")
+    exit()
+
+try:
+    start_time = time.time()
+
+    while True:
+
+        button_state = GPIO.input(PARTNER_PIN)
+        print(button_state)
+        if button_state == 0:                
+            button_counter += 2
+                
+        # Read sensor values
+        movement_value = GPIO.input(MOVEMENT_SENSOR_PIN)
+
+        #UTF-8 more consistant than default
+        #must read serial line to recieve data from arduino
+        line = ser.readline().decode('utf-8').strip()  # Read a line from the serial connection
+
+        #line = ser.readline().decode().strip()  # Read a line from the serial connection
+
+        # Extract sound value from the line
+        sound_start = line.find("Sound: ") + len("Sound: ")
+        sound_end = line.find(",", sound_start)
+        sound_value = int(line[sound_start:sound_end].strip())
+
+        # Extract temperature value from the line
+        temperature_start = line.find("Temperature: ") + len("Temperature: ")
+        temperature_value = float(line[temperature_start:])
+        
+        # Initialize the counters
+        noise_counter = 0
+        movement_counter = 0
+        temperature_counter = 0
+
+        # Check sound value
+        if sound_value > noise_limit:
+            noise_counter = 1
+
+        # Check movement sensor
+        if movement_value == 1:
+            movement_counter = 1
+
+        if temperature_counter <= 1:
+            if temperature_value >= temperature_lower_safe and temperature_value <= temperature_upper_safe:
+                temperature_counter = 0
+
+        if temperature_counter <= 1:
+            if (temperature_value >= temperature_lower_limit and temperature_value <= temperature_lower_safe) or (
+                    temperature_value >= temperature_upper_safe and temperature_value <= temperature_upper_limit):
+                temperature_counter = 1
+
+        # Check temperature sensor
+        if temperature_value > temperature_upper_limit or temperature_value < temperature_lower_limit:
+            temperature_counter = 2
+
+        # Update the counter
+        counter = noise_counter + movement_counter + temperature_counter + button_counter
+
+        # Control LED sensors based on the count
+        control_leds(counter)
+
+        # Check if the current count is higher than the highest count
+        if counter > highest_counter:
+            highest_counter = counter
+            if counter == 2:
+                highest_message = message2
+            elif counter == 3:
+                highest_message = message3
+            elif counter >= 4:
+                highest_message = message4
+
+        # Activate relay if 2 or more counts
+        if button_counter == 2:
+            GPIO.output(RELAY_PIN, GPIO.HIGH)
+            send_text_message(chat_id, message1)
+        elif highest_counter == 2:
+            GPIO.output(RELAY_PIN, GPIO.HIGH)
+            send_text_message(chat_id, message2)
+        elif highest_counter == 3:
+            GPIO.output(RELAY_PIN, GPIO.HIGH)
+            send_text_message(chat_id, message3)
+        elif highest_counter >= 4:
+            GPIO.output(RELAY_PIN, GPIO.HIGH)
+            send_text_message(chat_id, message4)
+        else:
+            GPIO.output(RELAY_PIN, GPIO.LOW)
+
+        #debugging prints
+        print("sound_value:", sound_value)
+        print("noise_counter:", int(noise_counter))
+
+        print("temperature_value:", temperature_value)
+        print("temperature_count:", int(temperature_counter))
+
+        print("movement_value:", movement_value)
+
+        print("button_counter:", int(button_counter))
+        print("counter_value:", int(counter))
+
+        highest_counter = 0
+        highest_message = ""
+
+        # Check if 5 seconds have elapsed
+        if time.time() - start_time >= 5:
+            start_time = time.time()
+
+        # Reset the counters
+        noise_counter = 0
+        movement_counter = 0
+        temperature_counter = 0
+        button_counter = 0
+        counter = 0
+
+except KeyboardInterrupt:
+    GPIO.cleanup()
