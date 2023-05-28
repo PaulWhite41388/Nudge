@@ -175,6 +175,22 @@ try:
             elif counter >= 4:
                 highest_message = message4
 
+        #debugging prints
+        print("sound_value:", sound_value)
+        print("noise_counter:", int(noise_counter))
+
+        print("temperature_value:", temperature_value)
+        print("temperature_count:", int(temperature_counter))
+
+        print("movement_value:", movement_value)
+
+        print("button_counter:", int(button_counter))
+        print("counter_value:", int(counter))
+
+        # Check if 5 seconds have elapsed
+        if time.time() - start_time >= 5:
+            start_time = time.time()
+
         # Activate relay if 2 or more counts
         if button_counter == 2:
             GPIO.output(RELAY_PIN, GPIO.HIGH)
@@ -191,31 +207,16 @@ try:
         else:
             GPIO.output(RELAY_PIN, GPIO.LOW)
 
-        #debugging prints
-        print("sound_value:", sound_value)
-        print("noise_counter:", int(noise_counter))
-
-        print("temperature_value:", temperature_value)
-        print("temperature_count:", int(temperature_counter))
-
-        print("movement_value:", movement_value)
-
-        print("button_counter:", int(button_counter))
-        print("counter_value:", int(counter))
-
-        highest_counter = 0
-        highest_message = ""
-
-        # Check if 5 seconds have elapsed
-        if time.time() - start_time >= 5:
-            start_time = time.time()
-
         # Reset the counters
         noise_counter = 0
         movement_counter = 0
         temperature_counter = 0
         button_counter = 0
         counter = 0
+        highest_counter = 0
+        highest_message = ""
 
 except KeyboardInterrupt:
     GPIO.cleanup()
+
+
