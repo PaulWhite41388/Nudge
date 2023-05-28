@@ -1,0 +1,222 @@
+[
+    {
+        "id": "a413dd553adac0a5",
+        "type": "rpi-gpio in",
+        "z": "dd5ebd730084c5af",
+        "name": "PIR",
+        "pin": "16",
+        "intype": "tri",
+        "debounce": "25",
+        "read": false,
+        "bcm": true,
+        "x": 870,
+        "y": 360,
+        "wires": [
+            [
+                "016d947e5012735f",
+                "4a82470c6099f4aa"
+            ]
+        ]
+    },
+    {
+        "id": "016d947e5012735f",
+        "type": "debug",
+        "z": "dd5ebd730084c5af",
+        "name": "PIR",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1190,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "4a82470c6099f4aa",
+        "type": "function",
+        "z": "dd5ebd730084c5af",
+        "name": "Movement",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 440,
+        "wires": [
+            [
+                "016d947e5012735f",
+                "b14460a586a52c3e",
+                "091ed136d4f0396f"
+            ]
+        ]
+    },
+    {
+        "id": "b14460a586a52c3e",
+        "type": "ui_chart",
+        "z": "dd5ebd730084c5af",
+        "name": "PIR",
+        "group": "6872f7f918f40465",
+        "order": 2,
+        "width": "0",
+        "height": "0",
+        "label": "Movement",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1190,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b43b15e677740574",
+        "type": "serial in",
+        "z": "dd5ebd730084c5af",
+        "name": "Sound, Temperature",
+        "serial": "788db17fcc3eb89c",
+        "x": 1010,
+        "y": 220,
+        "wires": [
+            [
+                "93243867ae298435",
+                "07d295c8dbbe88ad"
+            ]
+        ]
+    },
+    {
+        "id": "93243867ae298435",
+        "type": "ui_text_input",
+        "z": "dd5ebd730084c5af",
+        "name": "",
+        "label": "Sensor 2",
+        "tooltip": "{{msg.payload}}",
+        "group": "6872f7f918f40465",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "mode": "text",
+        "delay": "1000",
+        "topic": "topic",
+        "sendOnBlur": true,
+        "className": "",
+        "topicType": "msg",
+        "x": 1260,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "091ed136d4f0396f",
+        "type": "ui_text_input",
+        "z": "dd5ebd730084c5af",
+        "name": "",
+        "label": "0 is inactive, 0 is active",
+        "tooltip": "",
+        "group": "6872f7f918f40465",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "mode": "text",
+        "delay": "1000",
+        "topic": "topic",
+        "sendOnBlur": true,
+        "className": "",
+        "topicType": "msg",
+        "x": 1300,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "07d295c8dbbe88ad",
+        "type": "debug",
+        "z": "dd5ebd730084c5af",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "6872f7f918f40465",
+        "type": "ui_group",
+        "name": "Details",
+        "tab": "0b4af31e012e8f3e",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "788db17fcc3eb89c",
+        "type": "serial-port",
+        "serialport": "/dev/ttyACM0",
+        "serialbaud": "9600",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": "10000"
+    },
+    {
+        "id": "0b4af31e012e8f3e",
+        "type": "ui_tab",
+        "name": "Options",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
